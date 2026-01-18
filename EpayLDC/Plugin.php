@@ -40,7 +40,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'label' => '支付网关地址',
                 'type' => 'string',
                 'required' => true,
-                'description' => '默认为 https://credit.linux. do/epay'
+                'description' => '默认为 https://credit.linux.do/epay'
             ],
             'pid' => [
                 'label' => '商户ID (Client ID)',
@@ -97,7 +97,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
         return [
             'type' => 1,
-            'data' => rtrim($this->getConfig('url'), '/') . '/pay/submit.php?' .  http_build_query($params)
+            'data' => rtrim($this->getConfig('url'), '/') . '/pay/submit.php?' . http_build_query($params)
         ];
     }
 
@@ -106,7 +106,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
      */
     public function notify($params): array|bool
     {
-        if (! isset($params['sign'])) {
+        if (!isset($params['sign'])) {
             return false;
         }
 
@@ -130,7 +130,13 @@ class Plugin extends AbstractPlugin implements PaymentInterface
      */
     public function query(string $tradeNo): array|bool
     {
-        $url = rtrim($this->getConfig('url'), '/') . '/api. php';
+        $baseUrl = $this->getConfig('url');
+        if (empty($baseUrl)) {
+            Log::error('EpayLDC query error: url config is empty');
+            return false;
+        }
+
+        $url = rtrim($baseUrl, '/') . '/api.php';
 
         $params = [
             'act' => 'order',
@@ -147,7 +153,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             $response = $client->get($url, ['query' => $params]);
             $result = json_decode($response->getBody()->getContents(), true);
 
-            if (isset($result['code']) && $result['code'] == 1 
+            if (isset($result['code']) && $result['code'] == 1
                 && isset($result['status']) && $result['status'] == 1) {
                 return [
                     'trade_no' => $result['out_trade_no'],
@@ -155,7 +161,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('EpayLDC query error: ' . $e->getMessage());
+            Log:: error('EpayLDC query error: ' . $e->getMessage());
         }
 
         return false;
