@@ -91,13 +91,13 @@ class Plugin extends AbstractPlugin implements PaymentInterface
         }
 
         ksort($params);
-        $str = stripslashes(urldecode(http_build_query($params))) .  $this->getConfig('key');
+        $str = stripslashes(urldecode(http_build_query($params))) . $this->getConfig('key');
         $params['sign'] = md5($str);
         $params['sign_type'] = 'MD5';
 
         return [
             'type' => 1,
-            'data' => rtrim($this->getConfig('url'), '/') . '/pay/submit.php?' . http_build_query($params)
+            'data' => rtrim($this->getConfig('url'), '/') . '/pay/submit.php?' .  http_build_query($params)
         ];
     }
 
@@ -127,14 +127,10 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
     /**
      * 主动查询订单状态
-     * 调用 LINUX DO Credit /api. php 接口查询订单是否已支付
-     *
-     * @param string $tradeNo Xboard 订单号 (out_trade_no)
-     * @return array|bool 成功返回订单信息，失败返回 false
      */
     public function query(string $tradeNo): array|bool
     {
-        $url = rtrim($this->getConfig('url'), '/') . '/api.php';
+        $url = rtrim($this->getConfig('url'), '/') . '/api. php';
 
         $params = [
             'act' => 'order',
@@ -151,7 +147,6 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             $response = $client->get($url, ['query' => $params]);
             $result = json_decode($response->getBody()->getContents(), true);
 
-            // code=1 且 status=1 表示支付成功
             if (isset($result['code']) && $result['code'] == 1 
                 && isset($result['status']) && $result['status'] == 1) {
                 return [
@@ -160,7 +155,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 ];
             }
         } catch (\Exception $e) {
-            Log:: error('EpayLDC query error: ' . $e->getMessage());
+            Log::error('EpayLDC query error: ' . $e->getMessage());
         }
 
         return false;
@@ -181,18 +176,16 @@ class Plugin extends AbstractPlugin implements PaymentInterface
      */
     protected function checkPendingOrders(): void
     {
-        // 获取使用 EpayLDC 支付方式的 payment_id
         $payments = Payment::where('payment', 'EpayLDC')
             ->where('enable', 1)
             ->pluck('id')
             ->toArray();
 
-        if (空的($payments)) {
+        if (empty($payments)) {
             return;
         }
 
-        // 查找待支付订单（最近24小时内创建的）
-        $orders = Order::where('status', Order::STATUS_PENDING)
+        $orders = Order:: where('status', Order::STATUS_PENDING)
             ->whereIn('payment_id', $payments)
             ->where('created_at', '>=', time() - 86400)
             ->get();
@@ -207,7 +200,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                     Log::info("EpayLDC order {$order->trade_no} confirmed paid via query.");
                 }
             } catch (\Exception $e) {
-                Log:: error("EpayLDC check order {$order->trade_no} failed: " . $e->getMessage());
+                Log::error("EpayLDC check order {$order->trade_no} failed: " . $e->getMessage());
             }
         }
     }
