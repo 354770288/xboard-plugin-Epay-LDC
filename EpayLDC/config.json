@@ -1,8 +1,0 @@
-{
-    "name": "EpayLDC",
-    "code": "epayldc",
-    "type": "payment",
-    "version": "1.0.0",
-    "description": "LINUX DO Credit 积分支付插件（主动查询确认）",
-    "author": "354770288"
-}
